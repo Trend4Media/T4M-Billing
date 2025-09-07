@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isSeeding, setIsSeeding] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,6 +43,30 @@ export default function LoginPage() {
       setError('Ein Fehler ist aufgetreten')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleSeedDatabase = async () => {
+    setIsSeeding(true)
+    setError('')
+    
+    try {
+      const response = await fetch('/api/admin/seed', {
+        method: 'POST'
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok) {
+        setError('')
+        alert('Datenbank erfolgreich initialisiert! Sie können sich jetzt anmelden.')
+      } else {
+        setError(result.error || 'Fehler beim Initialisieren der Datenbank')
+      }
+    } catch (error) {
+      setError('Fehler beim Initialisieren der Datenbank')
+    } finally {
+      setIsSeeding(false)
     }
   }
 
@@ -88,6 +113,16 @@ export default function LoginPage() {
               disabled={isLoading}
             >
               {isLoading ? 'Anmelden...' : 'Anmelden'}
+            </Button>
+            
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleSeedDatabase}
+              disabled={isSeeding}
+            >
+              {isSeeding ? 'Initialisiere...' : 'Datenbank initialisieren'}
             </Button>
           </form>
           
