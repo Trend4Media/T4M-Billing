@@ -241,19 +241,19 @@ export default function ImportsPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>Rookie Half-Milestone</div>
-                    <div>M0.5 erreicht (>0)</div>
+                    <div>M0.5 erreicht (&gt;0)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>Rookie Milestone 1</div>
-                    <div>M1 erreicht (>0)</div>
+                    <div>M1 erreicht (&gt;0)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>Rookie Milestone 1 Retent</div>
-                    <div>M1 Retention (>0)</div>
+                    <div>M1 Retention (&gt;0)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>Rookie Milestone 2</div>
-                    <div>M2 erreicht (>0)</div>
+                    <div>M2 erreicht (&gt;0)</div>
                   </div>
                 </div>
               </CardContent>
