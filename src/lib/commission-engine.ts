@@ -100,7 +100,7 @@ export class CommissionEngine {
     }
 
     return new CommissionEngine(
-      ruleSet.jsonRules as RuleSet,
+      ruleSet.jsonRules as unknown as RuleSet,
       parseFloat(period.usdEurRate.toString()),
       periodId
     )
