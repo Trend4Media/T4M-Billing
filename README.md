@@ -218,4 +218,4 @@ Bei Fragen oder Problemen:
 
 ---
 
-**© 2024 Trend4Media - Internes Billing System**
+**© 2024 Trend4Media - Internes Billing System**# Vercel deployment trigger
