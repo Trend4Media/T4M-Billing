@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "seed": "node scripts/seed-production.js"
+  },
+  "prisma": {
+    "seed": "node scripts/seed-production.js"
   },
   "dependencies": {
     "@prisma/client": "5.9.1",
