@@ -153,7 +153,7 @@ async function generateExportData(periodId: string) {
         }
       }))
     }
-  }).filter(manager => manager.creatorCount > 0) // Only include managers with revenue
+  }).filter(manager => manager.personalRevenue.creatorCount > 0) // Only include managers with revenue
 
   return {
     managerSummaries,
@@ -161,7 +161,7 @@ async function generateExportData(periodId: string) {
       totalManagers: managerSummaries.length,
       totalRevenue: managerSummaries.reduce((sum, m) => sum + m.personalRevenue.totalUsd, 0),
       totalCommissions: managerSummaries.reduce((sum, m) => sum + m.totalCommissionEur, 0),
-      totalCreators: managerSummaries.reduce((sum, m) => sum + m.creatorCount, 0),
+      totalCreators: managerSummaries.reduce((sum, m) => sum + m.personalRevenue.creatorCount, 0),
       totalDiamonds: managerSummaries.reduce((sum, m) => sum + m.personalRevenue.diamonds, 0)
     }
   }
@@ -188,7 +188,7 @@ function createExcelWorkbook(exportData: any, period: any) {
       manager.managerName,
       manager.managerEmail,
       manager.role === 'TEAM_LEADER' ? 'Team Leader' : 'Live Manager',
-      manager.creatorCount,
+      manager.personalRevenue.creatorCount,
       manager.personalRevenue.diamonds,
       manager.personalRevenue.baseUsd.toFixed(2),
       manager.personalRevenue.activityUsd.toFixed(2),
