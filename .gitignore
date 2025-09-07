@@ -33,8 +33,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Prisma
-/prisma/migrations/
+# Prisma (keep migrations for deployment)
+# /prisma/migrations/
 
 # Logs
 logs
