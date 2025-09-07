@@ -159,17 +159,19 @@ export default function AdminPage() {
                       Excel Import
                     </Button>
                   </Link>
-                  <Button variant="outline" className="w-full" disabled>
-                    Neuberechnung
-                  </Button>
+                  <Link href="/admin/periods">
+                    <Button variant="outline" className="w-full">
+                      Neuberechnung
+                    </Button>
+                  </Link>
                   <Link href="/admin/payouts">
                     <Button variant="outline" className="w-full">
                       Auszahlungen
                     </Button>
                   </Link>
-                  <Link href="/admin/periods">
+                  <Link href="/admin/managers">
                     <Button variant="outline" className="w-full">
-                      Periode sperren
+                      Excel Export
                     </Button>
                   </Link>
                 </div>
