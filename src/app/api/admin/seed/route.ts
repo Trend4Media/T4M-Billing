@@ -1,19 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+
+const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
   try {
     console.log('🌱 Seeding production database...')
 
+    // Check if users already exist
+    const existingAdmin = await prisma.user.findUnique({
+      where: { email: 'admin@trend4media.local' }
+    })
+
+    if (existingAdmin) {
+      return NextResponse.json({
+        success: true,
+        message: 'Datenbank bereits initialisiert!',
+        users: [
+          { email: 'admin@trend4media.local', role: 'ADMIN' },
+          { email: 'teamleader@trend4media.local', role: 'TEAM_LEADER' },
+          { email: 'livemanager@trend4media.local', role: 'SALES_REP' }
+        ]
+      })
+    }
+
     // Hash password for all users
     const hashedPassword = await bcrypt.hash('password123', 12)
 
-    // Create default users
-    const admin = await prisma.user.upsert({
-      where: { email: 'admin@trend4media.local' },
-      update: {},
-      create: {
+    // Create users
+    const admin = await prisma.user.create({
+      data: {
         email: 'admin@trend4media.local',
         name: 'Admin User',
         role: 'ADMIN',
@@ -22,10 +39,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const teamLeader = await prisma.user.upsert({
-      where: { email: 'teamleader@trend4media.local' },
-      update: {},
-      create: {
+    const teamLeader = await prisma.user.create({
+      data: {
         email: 'teamleader@trend4media.local',
         name: 'Team Leader',
         role: 'TEAM_LEADER',
@@ -34,10 +49,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const liveManager = await prisma.user.upsert({
-      where: { email: 'livemanager@trend4media.local' },
-      update: {},
-      create: {
+    const liveManager = await prisma.user.create({
+      data: {
         email: 'livemanager@trend4media.local',
         name: 'Live Manager',
         role: 'SALES_REP',
@@ -46,43 +59,9 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create organizational structure
-    await prisma.orgEdge.upsert({
-      where: {
-        parentId_childId_validFrom: {
-          parentId: teamLeader.id,
-          childId: liveManager.id,
-          validFrom: new Date('2024-01-01'),
-        },
-      },
-      update: {},
-      create: {
-        parentId: teamLeader.id,
-        childId: liveManager.id,
-        validFrom: new Date('2024-01-01'),
-      },
-    })
-
-    await prisma.orgRelation.upsert({
-      where: {
-        ancestorId_descendantId: {
-          ancestorId: teamLeader.id,
-          descendantId: liveManager.id,
-        },
-      },
-      update: {},
-      create: {
-        ancestorId: teamLeader.id,
-        descendantId: liveManager.id,
-        depth: 1,
-      },
-    })
-
     // Create default RuleSet
-    await prisma.ruleSet.upsert({
-      where: { id: 'default-rules-2024' },
-      update: {},
-      create: {
+    await prisma.ruleSet.create({
+      data: {
         id: 'default-rules-2024',
         jsonRules: {
           salesRep: {
@@ -128,10 +107,8 @@ export async function POST(request: NextRequest) {
     const now = new Date()
     const periodId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
     
-    await prisma.period.upsert({
-      where: { id: periodId },
-      update: {},
-      create: {
+    await prisma.period.create({
+      data: {
         id: periodId,
         year: now.getFullYear(),
         month: now.getMonth() + 1,
@@ -154,8 +131,14 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Seed error:', error)
     return NextResponse.json(
-      { error: 'Fehler beim Seeding der Datenbank', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Fehler beim Seeding der Datenbank', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     )
+  } finally {
+    await prisma.$disconnect()
   }
 }
