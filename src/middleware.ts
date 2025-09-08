@@ -7,7 +7,7 @@ export default withAuth(
     const token = req.nextauth.token
 
     // Public routes that don't require authentication
-    if (pathname === '/login' || pathname === '/') {
+    if (pathname === '/login' || pathname === '/' || pathname === '/api/admin/seed') {
       return NextResponse.next()
     }
 
@@ -38,8 +38,10 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        // Allow access to login page and root
-        if (req.nextUrl.pathname === '/login' || req.nextUrl.pathname === '/') {
+        // Allow access to login page, root, and seed API
+        if (req.nextUrl.pathname === '/login' || 
+            req.nextUrl.pathname === '/' || 
+            req.nextUrl.pathname === '/api/admin/seed') {
           return true
         }
         // Require token for all other routes
