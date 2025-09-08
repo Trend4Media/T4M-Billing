@@ -19,7 +19,7 @@ export default function AdminPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-4">
-              <Logo size="md" />
+              <Logo size="md" variant="header" />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
                 <p className="text-gray-600">Willkommen, {session?.user?.name}</p>
@@ -79,6 +79,12 @@ export default function AdminPage() {
               className="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
             >
               Manager
+            </Link>
+            <Link
+              href="/admin/settings"
+              className="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            >
+              Einstellungen
             </Link>
           </div>
         </div>
