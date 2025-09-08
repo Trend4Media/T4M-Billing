@@ -1,34 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
+  const prisma = new PrismaClient()
+  
   try {
-    console.log('🌱 Seeding production database...')
+    console.log('🌱 Starting database seed...')
 
-    // Check if users already exist
-    const existingAdmin = await prisma.user.findUnique({
-      where: { email: 'admin@trend4media.local' }
-    })
+    // Test database connection first
+    await prisma.$connect()
+    console.log('✅ Database connected')
 
-    if (existingAdmin) {
+    // Check if users table exists and count users
+    const userCount = await prisma.user.count()
+    console.log(`📊 Current user count: ${userCount}`)
+
+    if (userCount > 0) {
       return NextResponse.json({
         success: true,
-        message: 'Datenbank bereits initialisiert!',
-        users: [
-          { email: 'admin@trend4media.local', role: 'ADMIN' },
-          { email: 'teamleader@trend4media.local', role: 'TEAM_LEADER' },
-          { email: 'livemanager@trend4media.local', role: 'SALES_REP' }
-        ]
+        message: `Datenbank bereits initialisiert! ${userCount} Benutzer gefunden.`,
+        userCount
       })
     }
 
-    // Hash password for all users
+    // Import bcryptjs dynamically to avoid potential issues
+    const bcrypt = require('bcryptjs')
     const hashedPassword = await bcrypt.hash('password123', 12)
+    console.log('✅ Password hashed')
 
-    // Create users
+    // Create admin user first
     const admin = await prisma.user.create({
       data: {
         email: 'admin@trend4media.local',
@@ -38,7 +38,9 @@ export async function POST(request: NextRequest) {
         active: true,
       },
     })
+    console.log('✅ Admin user created:', admin.id)
 
+    // Create team leader
     const teamLeader = await prisma.user.create({
       data: {
         email: 'teamleader@trend4media.local',
@@ -48,7 +50,9 @@ export async function POST(request: NextRequest) {
         active: true,
       },
     })
+    console.log('✅ Team Leader created:', teamLeader.id)
 
+    // Create live manager
     const liveManager = await prisma.user.create({
       data: {
         email: 'livemanager@trend4media.local',
@@ -58,56 +62,13 @@ export async function POST(request: NextRequest) {
         active: true,
       },
     })
-
-    // Create default RuleSet
-    await prisma.ruleSet.create({
-      data: {
-        id: 'default-rules-2024',
-        jsonRules: {
-          salesRep: {
-            baseCommission: 0.30,
-            activityCommission: 0.30,
-            fixedBonuses: {
-              m0_5: 75,
-              m1: 150,
-              m1_retention: 100,
-              m2: 400,
-            },
-          },
-          teamLeader: {
-            baseCommission: 0.35,
-            activityCommission: 0.35,
-            fixedBonuses: {
-              m0_5: 80,
-              m1: 165,
-              m1_retention: 120,
-              m2: 450,
-            },
-            downlineRates: {
-              levelA: 0.10,
-              levelB: 0.075,
-              levelC: 0.05,
-            },
-            teamBonus: {
-              rate: 0.10,
-              recruitment: 50,
-              graduation: 50,
-            },
-          },
-          teamTargets: {
-            minTeamRevenue: 10000,
-          },
-        },
-        activeFrom: new Date('2024-01-01'),
-        isActive: true,
-      },
-    })
+    console.log('✅ Live Manager created:', liveManager.id)
 
     // Create current period
     const now = new Date()
     const periodId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
     
-    await prisma.period.create({
+    const period = await prisma.period.create({
       data: {
         id: periodId,
         year: now.getFullYear(),
@@ -116,22 +77,25 @@ export async function POST(request: NextRequest) {
         status: 'ACTIVE',
       },
     })
+    console.log('✅ Period created:', period.id)
 
     return NextResponse.json({
       success: true,
-      message: 'Database seeded successfully!',
+      message: 'Datenbank erfolgreich initialisiert!',
       users: [
-        { email: 'admin@trend4media.local', role: 'ADMIN' },
-        { email: 'teamleader@trend4media.local', role: 'TEAM_LEADER' },
-        { email: 'livemanager@trend4media.local', role: 'SALES_REP' }
+        { email: admin.email, role: admin.role, id: admin.id },
+        { email: teamLeader.email, role: teamLeader.role, id: teamLeader.id },
+        { email: liveManager.email, role: liveManager.role, id: liveManager.id }
       ],
-      period: periodId
+      period: period.id
     })
 
   } catch (error) {
-    console.error('Seed error:', error)
+    console.error('❌ Seed error:', error)
+    
     return NextResponse.json(
       { 
+        success: false,
         error: 'Fehler beim Seeding der Datenbank', 
         details: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
@@ -141,4 +105,11 @@ export async function POST(request: NextRequest) {
   } finally {
     await prisma.$disconnect()
   }
+}
+
+export async function GET() {
+  return NextResponse.json({
+    message: 'Seed API is working. Use POST to initialize database.',
+    timestamp: new Date().toISOString()
+  })
 }
