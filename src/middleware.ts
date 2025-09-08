@@ -7,7 +7,7 @@ export default withAuth(
     const token = req.nextauth.token
 
     // Public routes that don't require authentication
-    if (pathname === '/login' || pathname === '/' || pathname === '/api/admin/seed' || pathname === '/api/debug' || pathname === '/api/fix-db-url') {
+    if (pathname === '/login' || pathname === '/' || pathname === '/api/admin/seed' || pathname === '/api/debug' || pathname === '/api/fix-db-url' || pathname === '/api/simple-seed') {
       return NextResponse.next()
     }
 
@@ -38,12 +38,13 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        // Allow access to login page, root, seed API, debug API, and fix-db-url API
+        // Allow access to login page, root, and all debug/seed APIs
         if (req.nextUrl.pathname === '/login' || 
             req.nextUrl.pathname === '/' || 
             req.nextUrl.pathname === '/api/admin/seed' ||
             req.nextUrl.pathname === '/api/debug' ||
-            req.nextUrl.pathname === '/api/fix-db-url') {
+            req.nextUrl.pathname === '/api/fix-db-url' ||
+            req.nextUrl.pathname === '/api/simple-seed') {
           return true
         }
         // Require token for all other routes
