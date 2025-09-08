@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Logo } from '@/components/ui/logo'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -74,9 +75,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Trend4Media</CardTitle>
+          <div className="flex justify-center mb-4">
+            <Logo size="lg" />
+          </div>
+          <CardTitle className="text-2xl font-bold">Billing System</CardTitle>
           <CardDescription>
-            Billing System - Anmeldung
+            Internes Abrechnungstool - Anmeldung
           </CardDescription>
         </CardHeader>
         <CardContent>

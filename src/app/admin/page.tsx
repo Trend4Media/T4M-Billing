@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, getCurrentPeriodId, formatPeriod } from '@/lib/utils'
+import { Logo } from '@/components/ui/logo'
 
 export default function AdminPage() {
   const { data: session } = useSession()
@@ -17,9 +18,12 @@ export default function AdminPage() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600">Willkommen, {session?.user?.name}</p>
+            <div className="flex items-center space-x-4">
+              <Logo size="md" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+                <p className="text-gray-600">Willkommen, {session?.user?.name}</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">
