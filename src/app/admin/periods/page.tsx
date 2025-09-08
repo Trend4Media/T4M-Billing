@@ -308,7 +308,7 @@ export default function PeriodsPage() {
                     </div>
                     <div>
                       <div className="font-medium">USD/EUR Kurs</div>
-                      <div>{currentPeriod.usdEurRate ? currentPeriod.usdEurRate.toFixed(6) : 'Nicht gesetzt'}</div>
+                      <div>{currentPeriod.usdEurRate ? parseFloat(currentPeriod.usdEurRate.toString()).toFixed(6) : 'Nicht gesetzt'}</div>
                     </div>
                     <div>
                       <div className="font-medium">Revenue Items</div>
