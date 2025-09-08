@@ -31,6 +31,7 @@ export default function PeriodsPage() {
   const [isRecalculating, setIsRecalculating] = useState(false)
   const [usdEurRate, setUsdEurRate] = useState('')
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [isFetchingRate, setIsFetchingRate] = useState(false)
   
   const currentPeriodId = getCurrentPeriodId()
 
@@ -195,6 +196,41 @@ export default function PeriodsPage() {
       setMessage({ type: 'error', text: 'Fehler bei der Provisionsberechnung' })
     } finally {
       setIsRecalculating(false)
+    }
+  }
+
+  const handleFetchExchangeRate = async () => {
+    if (!currentPeriod) return
+
+    setIsFetchingRate(true)
+    setMessage(null)
+
+    try {
+      const response = await fetch(`/api/exchange-rate/${currentPeriod.id}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        setUsdEurRate(data.exchangeRate.rate.toString())
+        setMessage({ 
+          type: 'success', 
+          text: `Wechselkurs automatisch abgerufen: ${data.exchangeRate.formatted} (${data.ruleDate})` 
+        })
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Fehler beim Abrufen des Wechselkurses' })
+        
+        // Show fallback rate option
+        if (data.fallbackRate) {
+          setUsdEurRate(data.fallbackRate.toString())
+          setMessage({ 
+            type: 'error', 
+            text: `${data.error} - Fallback-Rate gesetzt: ${data.fallbackMessage}` 
+          })
+        }
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Fehler beim Abrufen des Wechselkurses' })
+    } finally {
+      setIsFetchingRate(false)
     }
   }
 
@@ -375,13 +411,24 @@ export default function PeriodsPage() {
                     </div>
                   </div>
 
-                  <Button
-                    onClick={handleUpdateRate}
-                    disabled={isUpdating || !usdEurRate || currentPeriod.status === 'LOCKED'}
-                    className="w-full"
-                  >
-                    {isUpdating ? 'Setze Kurs...' : 'Kurs fixieren'}
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={handleFetchExchangeRate}
+                      disabled={isFetchingRate || currentPeriod.status === 'LOCKED'}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      {isFetchingRate ? 'Lade Kurs...' : 'Kurs vom 6. des Monats abrufen'}
+                    </Button>
+                    
+                    <Button
+                      onClick={handleUpdateRate}
+                      disabled={isUpdating || !usdEurRate || currentPeriod.status === 'LOCKED'}
+                      className="w-full"
+                    >
+                      {isUpdating ? 'Setze Kurs...' : 'Kurs fixieren'}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 

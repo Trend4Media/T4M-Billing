@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { parseExcelFile, type ImportRow } from '@/lib/excel-parser'
 import { getCurrentPeriodId } from '@/lib/utils'
+import { ExchangeRateService } from '@/lib/exchange-rate-service'
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,13 +27,59 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Nur Excel-Dateien (.xlsx, .xls) sind erlaubt' }, { status: 400 })
     }
 
-    // Check if period exists
-    const period = await prisma.period.findUnique({
+    // Check if period exists, create if it doesn't
+    let period = await prisma.period.findUnique({
       where: { id: periodId }
     })
 
+    const periodYear = parseInt(periodId.substring(0, 4))
+    const periodMonth = parseInt(periodId.substring(4, 6))
+
     if (!period) {
-      return NextResponse.json({ error: 'Periode nicht gefunden' }, { status: 400 })
+      console.log(`📅 Creating new period: ${periodId}`)
+      
+      // Get exchange rate for the 6th of this month at 12:00 noon
+      const rateResult = await ExchangeRateService.getMonthlyRate(periodYear, periodMonth)
+      let exchangeRate: number
+      
+      if (rateResult.success && rateResult.rate) {
+        exchangeRate = rateResult.rate
+        console.log(`✅ Automatic exchange rate set: ${ExchangeRateService.formatRate(exchangeRate)}`)
+      } else {
+        exchangeRate = ExchangeRateService.getFallbackRate()
+        console.log(`⚠️ Using fallback rate: ${ExchangeRateService.formatRate(exchangeRate)}`)
+        console.log(`⚠️ Reason: ${rateResult.error}`)
+      }
+      
+      period = await prisma.period.create({
+        data: {
+          id: periodId,
+          year: periodYear,
+          month: periodMonth,
+          usdEurRate: exchangeRate,
+          status: 'ACTIVE'
+        }
+      })
+    } else if (!period.usdEurRate) {
+      // Period exists but no exchange rate set - fetch it now
+      console.log(`📅 Setting exchange rate for existing period: ${periodId}`)
+      
+      const rateResult = await ExchangeRateService.getMonthlyRate(periodYear, periodMonth)
+      let exchangeRate: number
+      
+      if (rateResult.success && rateResult.rate) {
+        exchangeRate = rateResult.rate
+        console.log(`✅ Automatic exchange rate updated: ${ExchangeRateService.formatRate(exchangeRate)}`)
+      } else {
+        exchangeRate = ExchangeRateService.getFallbackRate()
+        console.log(`⚠️ Using fallback rate: ${ExchangeRateService.formatRate(exchangeRate)}`)
+        console.log(`⚠️ Reason: ${rateResult.error}`)
+      }
+      
+      period = await prisma.period.update({
+        where: { id: periodId },
+        data: { usdEurRate: exchangeRate }
+      })
     }
 
     if (period.status === 'LOCKED') {
