@@ -348,11 +348,11 @@ export default function PeriodsPage() {
                     </div>
                     <div>
                       <div className="font-medium">Revenue Items</div>
-                      <div>{currentPeriod._count.revenueItems}</div>
+                      <div>{currentPeriod._count?.revenueItems || 0}</div>
                     </div>
                     <div>
                       <div className="font-medium">Provisionen berechnet</div>
-                      <div>{currentPeriod._count.commissions > 0 ? 'Ja' : 'Nein'}</div>
+                      <div>{(currentPeriod._count?.commissions || 0) > 0 ? 'Ja' : 'Nein'}</div>
                     </div>
                   </div>
 
@@ -447,8 +447,8 @@ export default function PeriodsPage() {
                       <li className={currentPeriod.usdEurRate ? 'text-green-700' : ''}>
                         ✓ USD/EUR Kurs gesetzt: {currentPeriod.usdEurRate ? 'Ja' : 'Nein'}
                       </li>
-                      <li className={currentPeriod._count.revenueItems > 0 ? 'text-green-700' : ''}>
-                        ✓ Revenue-Daten importiert: {currentPeriod._count.revenueItems} Items
+                      <li className={(currentPeriod._count?.revenueItems || 0) > 0 ? 'text-green-700' : ''}>
+                        ✓ Revenue-Daten importiert: {currentPeriod._count?.revenueItems || 0} Items
                       </li>
                       <li className={currentPeriod.status !== 'LOCKED' ? 'text-green-700' : 'text-red-700'}>
                         ✓ Periode nicht gesperrt: {currentPeriod.status !== 'LOCKED' ? 'Ja' : 'Nein'}
@@ -458,18 +458,18 @@ export default function PeriodsPage() {
 
                   <Button
                     onClick={handleRecalculate}
-                    disabled={
-                      isRecalculating || 
-                      !currentPeriod.usdEurRate || 
-                      currentPeriod._count.revenueItems === 0 ||
-                      currentPeriod.status === 'LOCKED'
-                    }
+                      disabled={
+                        isRecalculating || 
+                        !currentPeriod.usdEurRate || 
+                        (currentPeriod._count?.revenueItems || 0) === 0 ||
+                        currentPeriod.status === 'LOCKED'
+                      }
                     className="w-full"
                   >
                     {isRecalculating ? 'Berechne Provisionen...' : 'Provisionen neu berechnen'}
                   </Button>
 
-                  {currentPeriod._count.commissions > 0 && (
+                  {(currentPeriod._count?.commissions || 0) > 0 && (
                     <div className="text-sm text-green-600">
                       ✓ {currentPeriod._count.commissions} Provisionskomponenten bereits berechnet
                     </div>
