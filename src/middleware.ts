@@ -7,7 +7,7 @@ export default withAuth(
     const token = req.nextauth.token
 
     // Public routes that don't require authentication
-    if (pathname === '/login' || pathname === '/' || pathname === '/api/admin/seed' || pathname === '/api/debug' || pathname === '/api/fix-db-url' || pathname === '/api/simple-seed' || pathname === '/api/direct-seed') {
+    if (pathname === '/login' || pathname === '/' || pathname === '/api/admin/seed' || pathname === '/api/debug' || pathname === '/api/fix-db-url' || pathname === '/api/simple-seed' || pathname === '/api/direct-seed' || pathname === '/api/admin/migrate') {
       return NextResponse.next()
     }
 
@@ -45,7 +45,8 @@ export default withAuth(
             req.nextUrl.pathname === '/api/debug' ||
             req.nextUrl.pathname === '/api/fix-db-url' ||
             req.nextUrl.pathname === '/api/simple-seed' ||
-            req.nextUrl.pathname === '/api/direct-seed') {
+            req.nextUrl.pathname === '/api/direct-seed' ||
+            req.nextUrl.pathname === '/api/admin/migrate') {
           return true
         }
         // Require token for all other routes

@@ -20,6 +20,7 @@ export default function SettingsPage() {
   } | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [isMigrating, setIsMigrating] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const currentPeriod = getCurrentPeriodId()
@@ -90,6 +91,31 @@ export default function SettingsPage() {
         success: false,
         message: 'Fehler beim Entfernen des Logos'
       })
+    }
+  }
+
+  const handleRunMigrations = async () => {
+    setIsMigrating(true)
+    setUploadResult(null)
+
+    try {
+      const response = await fetch('/api/admin/migrate', {
+        method: 'POST'
+      })
+
+      const result = await response.json()
+      setUploadResult({
+        success: result.success,
+        message: result.message,
+        details: result.details || result.tables
+      })
+    } catch (error) {
+      setUploadResult({
+        success: false,
+        message: 'Fehler beim Ausführen der Migrationen'
+      })
+    } finally {
+      setIsMigrating(false)
     }
   }
 
@@ -338,6 +364,21 @@ export default function SettingsPage() {
                     Nach dem Hochladen wird das Logo sofort in allen Bereichen des Systems angezeigt. 
                     Ein Browser-Refresh kann erforderlich sein, um Änderungen zu sehen.
                   </p>
+                </div>
+
+                <div className="bg-yellow-50 p-4 rounded">
+                  <h4 className="font-medium text-yellow-900 mb-2">Datenbank-Setup:</h4>
+                  <p className="text-sm text-yellow-800 mb-3">
+                    Falls der Logo-Upload fehlschlägt, müssen zuerst die Datenbank-Migrationen ausgeführt werden.
+                  </p>
+                  <Button
+                    onClick={handleRunMigrations}
+                    disabled={isMigrating}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {isMigrating ? 'Führe Migrationen aus...' : 'Datenbank-Migrationen ausführen'}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
