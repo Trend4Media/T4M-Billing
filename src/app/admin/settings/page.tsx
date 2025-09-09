@@ -12,7 +12,12 @@ import { getCurrentPeriodId, formatPeriod } from '@/lib/utils'
 export default function SettingsPage() {
   const { data: session } = useSession()
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadResult, setUploadResult] = useState<{ success: boolean, message: string } | null>(null)
+  const [uploadResult, setUploadResult] = useState<{ 
+    success: boolean, 
+    message: string,
+    details?: any,
+    error?: string
+  } | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -169,8 +174,34 @@ export default function SettingsPage() {
           
           {/* Upload Result */}
           {uploadResult && (
-            <div className={`mb-6 p-4 rounded ${uploadResult.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-              {uploadResult.message}
+            <div className={`mb-6 p-4 rounded ${uploadResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+              <div className={`font-medium ${uploadResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                {uploadResult.success ? '✅ Erfolg' : '❌ Fehler'}
+              </div>
+              <div className={`mt-1 ${uploadResult.success ? 'text-green-700' : 'text-red-700'}`}>
+                {uploadResult.message}
+              </div>
+              {uploadResult.details && (
+                <div className={`mt-2 text-sm ${uploadResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                  {uploadResult.success ? (
+                    <div className="space-y-1">
+                      <div>📁 Datei: {uploadResult.details.filename}</div>
+                      <div>📏 Größe: {uploadResult.details.size}</div>
+                      <div>🎨 Format: {uploadResult.details.type}</div>
+                      <div>🔗 Pfad: {uploadResult.details.path}</div>
+                    </div>
+                  ) : (
+                    <div>
+                      <strong>Details:</strong> {uploadResult.details}
+                    </div>
+                  )}
+                </div>
+              )}
+              {!uploadResult.success && uploadResult.error && (
+                <div className="mt-2 text-xs text-red-500 bg-red-100 p-2 rounded">
+                  <strong>Technische Details:</strong> {uploadResult.error}
+                </div>
+              )}
             </div>
           )}
 
@@ -212,12 +243,17 @@ export default function SettingsPage() {
                   <Input
                     id="logo"
                     type="file"
-                    accept="image/*"
+                    accept=".png,.jpg,.jpeg,.svg,.webp"
                     onChange={handleFileSelect}
                     ref={fileInputRef}
                   />
                   <div className="text-sm text-gray-600">
-                    Unterstützte Formate: PNG, JPG, SVG (max. 2MB)
+                    <div className="space-y-1">
+                      <div>• <strong>Formate:</strong> PNG, JPG, SVG, WebP</div>
+                      <div>• <strong>Maximale Größe:</strong> 2MB</div>
+                      <div>• <strong>Empfohlen:</strong> PNG mit transparentem Hintergrund</div>
+                      <div>• <strong>Ideal:</strong> 200x60 Pixel (3:1 Verhältnis)</div>
+                    </div>
                   </div>
                 </div>
 
