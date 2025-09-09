@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { writeFile, unlink, readFile } from 'fs/promises'
-import { existsSync } from 'fs'
-import path from 'path'
+import { PrismaClient } from '@prisma/client'
 
-const LOGO_PATH = path.join(process.cwd(), 'public', 'logo.png')
+const prisma = new PrismaClient()
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+const LOGO_KEY = 'company_logo'
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,24 +78,26 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    console.log(`💾 Saving file to: ${LOGO_PATH}`)
+    console.log(`💾 Saving logo to database...`)
 
-    // Ensure public directory exists
-    const publicDir = path.join(process.cwd(), 'public')
-    try {
-      await writeFile(path.join(publicDir, '.keep'), '')
-    } catch (dirError) {
-      console.log('📁 Public directory already exists or created')
-    }
+    // Save logo to database
+    await prisma.systemSetting.upsert({
+      where: { key: LOGO_KEY },
+      update: {
+        fileData: buffer,
+        mimeType: file.type,
+        value: file.name,
+        updatedAt: new Date()
+      },
+      create: {
+        key: LOGO_KEY,
+        fileData: buffer,
+        mimeType: file.type,
+        value: file.name
+      }
+    })
 
-    // Save file
-    await writeFile(LOGO_PATH, buffer)
-    console.log('✅ Logo saved successfully')
-
-    // Verify file was saved
-    if (!existsSync(LOGO_PATH)) {
-      throw new Error('Datei wurde nicht gespeichert')
-    }
+    console.log('✅ Logo saved successfully to database')
 
     return NextResponse.json({
       success: true,
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
         filename: file.name,
         size: `${(file.size / 1024).toFixed(1)} KB`,
         type: file.type,
-        dimensions: 'Wird automatisch skaliert',
+        storage: 'Datenbank',
         path: '/api/admin/settings/logo'
       }
     })
@@ -117,31 +118,50 @@ export async function POST(request: NextRequest) {
       success: false,
       error: 'Fehler beim Hochladen des Logos',
       details: error instanceof Error ? error.message : 'Unbekannter Server-Fehler',
-      stack: error instanceof Error ? error.stack : undefined
+      technicalInfo: {
+        errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+        timestamp: new Date().toISOString()
+      }
     }, { status: 500 })
+  } finally {
+    await prisma.$disconnect()
   }
 }
 
 export async function GET() {
   try {
-    // Check if logo exists
-    if (!existsSync(LOGO_PATH)) {
-      return new NextResponse(null, { status: 404 })
+    console.log('🖼️ Fetching logo from database...')
+
+    // Get logo from database
+    const logoSetting = await prisma.systemSetting.findUnique({
+      where: { key: LOGO_KEY },
+      select: {
+        fileData: true,
+        mimeType: true,
+        value: true
+      }
+    })
+
+    if (!logoSetting || !logoSetting.fileData) {
+      console.log('❌ No logo found in database')
+      return new NextResponse('Logo nicht gefunden', { status: 404 })
     }
 
-    // Read and return logo file
-    const fileBuffer = await readFile(LOGO_PATH)
-    
-    return new NextResponse(fileBuffer, {
+    console.log(`✅ Logo found: ${logoSetting.value}, Type: ${logoSetting.mimeType}`)
+
+    return new NextResponse(logoSetting.fileData, {
       headers: {
-        'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+        'Content-Type': logoSetting.mimeType || 'image/png',
+        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+        'Content-Disposition': `inline; filename="${logoSetting.value || 'logo.png'}"`
       }
     })
 
   } catch (error) {
-    console.error('Logo serve error:', error)
-    return new NextResponse(null, { status: 404 })
+    console.error('❌ Logo serve error:', error)
+    return new NextResponse('Fehler beim Laden des Logos', { status: 500 })
+  } finally {
+    await prisma.$disconnect()
   }
 }
 
@@ -150,13 +170,20 @@ export async function DELETE() {
     const session = await getServerSession(authOptions)
     
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ 
+        success: false,
+        error: 'Nicht autorisiert' 
+      }, { status: 401 })
     }
 
-    // Remove logo file if it exists
-    if (existsSync(LOGO_PATH)) {
-      await unlink(LOGO_PATH)
-    }
+    console.log('🗑️ Removing logo from database...')
+
+    // Remove logo from database
+    await prisma.systemSetting.deleteMany({
+      where: { key: LOGO_KEY }
+    })
+
+    console.log('✅ Logo removed successfully')
 
     return NextResponse.json({
       success: true,
@@ -164,10 +191,13 @@ export async function DELETE() {
     })
 
   } catch (error) {
-    console.error('Logo delete error:', error)
-    return NextResponse.json(
-      { error: 'Fehler beim Entfernen des Logos' },
-      { status: 500 }
-    )
+    console.error('❌ Logo delete error:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Fehler beim Entfernen des Logos',
+      details: error instanceof Error ? error.message : 'Unbekannter Fehler'
+    }, { status: 500 })
+  } finally {
+    await prisma.$disconnect()
   }
 }

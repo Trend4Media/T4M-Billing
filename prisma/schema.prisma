@@ -123,6 +123,18 @@ model RuleSet {
   @@map("rule_sets")
 }
 
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String?
+  fileData  Bytes?   // For storing logo files
+  mimeType  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
 model ImportBatch {
   id           String       @id @default(cuid())
   periodId     String
