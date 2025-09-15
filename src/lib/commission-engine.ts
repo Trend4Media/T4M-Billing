@@ -4,33 +4,33 @@ import { ComponentType, Role } from '@prisma/client'
 
 interface RuleSet {
   salesRep: {
-    baseCommission: number
-    activityCommission: number
+    baseCommission: number      // 0.30 (30%)
+    activityCommission: number  // 0.30 (30%)
     fixedBonuses: {
-      m0_5: number
-      m1: number
-      m1_retention: number
-      m2: number
+      m0_5: number      // €75
+      m1: number        // €150
+      m1_retention: number // €100
+      m2: number        // €400
     }
   }
   teamLeader: {
-    baseCommission: number
-    activityCommission: number
+    baseCommission: number      // 0.35 (35%)
+    activityCommission: number  // 0.35 (35%)
     fixedBonuses: {
-      m0_5: number
-      m1: number
-      m1_retention: number
-      m2: number
+      m0_5: number      // €80
+      m1: number        // €165
+      m1_retention: number // €120
+      m2: number        // €450
     }
     downlineRates: {
-      levelA: number
-      levelB: number
-      levelC: number
+      levelA: number    // 0.10 (10%)
+      levelB: number    // 0.075 (7.5%)
+      levelC: number    // 0.05 (5.0%)
     }
     teamBonus: {
-      rate: number
-      recruitment: number
-      graduation: number
+      rate: number      // 0.10 (10%)
+      recruitment: number // €50
+      graduation: number  // €50
     }
   }
   teamTargets: {

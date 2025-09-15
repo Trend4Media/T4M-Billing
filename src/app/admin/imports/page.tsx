@@ -34,28 +34,40 @@ export default function ImportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState(getCurrentPeriodId())
   const [hasManagers, setHasManagers] = useState<boolean | null>(null)
   const [managers, setManagers] = useState<Array<{name: string, role: string}>>([])
+  const [hasRuleSet, setHasRuleSet] = useState<boolean | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const currentPeriod = getCurrentPeriodId()
 
-  // Check if managers exist on component mount
+  // Check if managers and rule set exist on component mount
   React.useEffect(() => {
-    const checkManagers = async () => {
+    const checkSetup = async () => {
       try {
-        const response = await fetch('/api/imports/check-managers')
-        if (response.ok) {
-          const data = await response.json()
-          setHasManagers(data.hasManagers)
-          setManagers(data.managers || [])
+        // Check managers
+        const managersResponse = await fetch('/api/imports/check-managers')
+        if (managersResponse.ok) {
+          const managersData = await managersResponse.json()
+          setHasManagers(managersData.hasManagers)
+          setManagers(managersData.managers || [])
         } else {
           setHasManagers(false)
         }
+
+        // Check rule set
+        const rulesResponse = await fetch('/api/admin/rules/check')
+        if (rulesResponse.ok) {
+          const rulesData = await rulesResponse.json()
+          setHasRuleSet(rulesData.hasRuleSet)
+        } else {
+          setHasRuleSet(false)
+        }
       } catch (error) {
-        console.error('Error checking managers:', error)
+        console.error('Error checking setup:', error)
         setHasManagers(false)
+        setHasRuleSet(false)
       }
     }
-    checkManagers()
+    checkSetup()
   }, [])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,6 +244,53 @@ export default function ImportsPage() {
               </CardHeader>
             </Card>
           )}
+
+          {/* Rule Set Check Warning */}
+          {hasRuleSet === false && (
+            <Card className="border-orange-200 mb-6">
+              <CardHeader>
+                <CardTitle className="text-orange-800">Kein Regel-Set gefunden</CardTitle>
+                <CardDescription>
+                  Es wurde kein aktives Regel-Set für die Provisionen gefunden. 
+                  Bitte erstellen Sie ein Regel-Set, bevor Sie Daten importieren.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/admin/rules/create-default', {
+                        method: 'POST'
+                      })
+                      if (response.ok) {
+                        setHasRuleSet(true)
+                        alert('Standard-Regel-Set erfolgreich erstellt!')
+                      } else {
+                        const error = await response.text()
+                        alert(`Fehler beim Erstellen des Regel-Sets: ${error}`)
+                      }
+                    } catch (error) {
+                      alert(`Fehler: ${error}`)
+                    }
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  Standard-Regel-Set erstellen
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {hasRuleSet === true && (
+            <Card className="border-green-200 mb-6">
+              <CardHeader>
+                <CardTitle className="text-green-800">Regel-Set verfügbar</CardTitle>
+                <CardDescription>
+                  Aktives Regel-Set für Provisionen gefunden
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
           
           {/* Upload Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -272,10 +331,13 @@ export default function ImportsPage() {
 
                 <Button
                   onClick={handleUpload}
-                  disabled={!selectedFile || isUploading || hasManagers === false}
+                  disabled={!selectedFile || isUploading || hasManagers === false || hasRuleSet === false}
                   className="w-full"
                 >
-                  {isUploading ? 'Importiere...' : hasManagers === false ? 'Keine Manager verfügbar' : 'Import starten'}
+                  {isUploading ? 'Importiere...' : 
+                   hasManagers === false ? 'Keine Manager verfügbar' : 
+                   hasRuleSet === false ? 'Kein Regel-Set verfügbar' : 
+                   'Import starten'}
                 </Button>
               </CardContent>
             </Card>
@@ -296,43 +358,43 @@ export default function ImportsPage() {
                   </div>
                   <hr />
                   <div className="grid grid-cols-2 gap-2">
-                    <div>Data Month</div>
-                    <div>YYYY-MM Format</div>
+                    <div><strong>Data Month</strong></div>
+                    <div>YYYY-MM Format (Pflicht)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div>Handle</div>
-                    <div>TikTok Creator Handle</div>
+                    <div><strong>Handle</strong></div>
+                    <div>TikTok Creator Handle (Pflicht)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div>Creator Network Manager</div>
-                    <div>Live Manager Name</div>
+                    <div><strong>Creator Network Manager</strong></div>
+                    <div>Live Manager Name (Pflicht)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>Diamonds</div>
                     <div>Creator Diamonds (optional)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div>Estimated Bonus (USD, Base)</div>
-                    <div>Base Revenue USD</div>
+                    <div><strong>Estimated Bonus (USD, Base)</strong></div>
+                    <div>Base Revenue USD (Pflicht)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div>Estimated Bonus – Activeness</div>
-                    <div>Activity Revenue USD</div>
+                    <div><strong>Estimated Bonus - Activeness task (USD)</strong></div>
+                    <div>Activity Revenue USD (Pflicht)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div>Rookie Half-Milestone</div>
+                    <div>Estimated bonus - Rookie half-milestone bonus task (USD)</div>
                     <div>M0.5 erreicht (&gt;0)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div>Rookie Milestone 1</div>
+                    <div>Rookie milestone 1 bonus task (USD)</div>
                     <div>M1 erreicht (&gt;0)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div>Rookie Milestone 1 Retent</div>
+                    <div>Estimated bonus - Rookie milestone 1 retent (USD)</div>
                     <div>M1 Retention (&gt;0)</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div>Rookie Milestone 2</div>
+                    <div>Estimated bonus - Rookie milestone 2 bonus task (USD)</div>
                     <div>M2 erreicht (&gt;0)</div>
                   </div>
                 </div>

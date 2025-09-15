@@ -1,32 +1,32 @@
 import * as XLSX from 'xlsx'
 import { z } from 'zod'
 
-// Expected column mappings (case-insensitive, fuzzy matching)
+// Expected column mappings according to v1 specification (case-insensitive, fuzzy matching)
 const COLUMN_MAPPINGS = {
   dataMonth: ['data month', 'month', 'periode', 'period'],
   handle: ['handle', 'creator handle', 'tiktok handle', 'creator'],
   managerName: ['creator network manager', 'manager', 'network manager', 'live manager'],
   diamonds: ['diamonds'],
   estBaseUsd: ['estimated bonus (usd, base)', 'base bonus', 'estimated bonus usd base', 'base usd'],
-  estActivityUsd: ['estimated bonus – activeness task (usd)', 'activity bonus', 'activeness task usd', 'activity usd'],
-  m0_5: ['estimated bonus – rookie half-milestone bonus task (usd)', 'rookie half milestone', 'm0.5', 'm0_5'],
+  estActivityUsd: ['estimated bonus - activeness task (usd)', 'activity bonus', 'activeness task usd', 'activity usd'],
+  m0_5: ['estimated bonus - rookie half-milestone bonus task (usd)', 'rookie half milestone', 'm0.5', 'm0_5'],
   m1: ['rookie milestone 1 bonus task (usd)', 'milestone 1', 'm1'],
-  m1Retention: ['estimated bonus – rookie milestone 1 retent (usd)', 'milestone 1 retention', 'm1 retention', 'm1_retention'],
-  m2: ['estimated bonus – rookie milestone 2 bonus task (usd)', 'milestone 2', 'm2']
+  m1Retention: ['estimated bonus - rookie milestone 1 retent (usd)', 'milestone 1 retention', 'm1 retention', 'm1_retention'],
+  m2: ['estimated bonus - rookie milestone 2 bonus task (usd)', 'milestone 2', 'm2']
 }
 
-// Validation schema for imported data
+// Validation schema for imported data according to v1 specification
 const ImportRowSchema = z.object({
   dataMonth: z.string().regex(/^\d{4}-\d{2}$/, 'Format muss YYYY-MM sein'),
   handle: z.string().min(1, 'Handle ist erforderlich'),
-  managerName: z.string().min(1, 'Manager Name ist erforderlich'),
-  diamonds: z.number().min(0, 'Diamonds muss >= 0 sein'),
-  estBaseUsd: z.number().min(0, 'Base USD muss >= 0 sein'),
-  estActivityUsd: z.number().min(0, 'Activity USD muss >= 0 sein'),
-  m0_5: z.number().min(0, 'M0.5 muss >= 0 sein'),
-  m1: z.number().min(0, 'M1 muss >= 0 sein'),
-  m1Retention: z.number().min(0, 'M1 Retention muss >= 0 sein'),
-  m2: z.number().min(0, 'M2 muss >= 0 sein'),
+  managerName: z.string().min(1, 'Creator Network Manager ist erforderlich'),
+  diamonds: z.number().int().min(0, 'Diamonds muss eine Ganzzahl >= 0 sein'),
+  estBaseUsd: z.number().min(0, 'Estimated Bonus (USD, Base) muss >= 0 sein'),
+  estActivityUsd: z.number().min(0, 'Estimated Bonus - Activeness task (USD) muss >= 0 sein'),
+  m0_5: z.number().min(0, 'Rookie half-milestone bonus muss >= 0 sein'),
+  m1: z.number().min(0, 'Rookie milestone 1 bonus muss >= 0 sein'),
+  m1Retention: z.number().min(0, 'Rookie milestone 1 retention muss >= 0 sein'),
+  m2: z.number().min(0, 'Rookie milestone 2 bonus muss >= 0 sein'),
 })
 
 export type ImportRow = z.infer<typeof ImportRowSchema>
@@ -160,7 +160,7 @@ export function parseExcelFile(buffer: Buffer): ParseResult {
     const columnMappings = findColumnMapping(headers)
     result.columnMappings = columnMappings
 
-    // Check for missing required columns
+    // Check for missing required columns according to v1 specification
     const requiredColumns = ['dataMonth', 'handle', 'managerName', 'estBaseUsd', 'estActivityUsd']
     const missingColumns = requiredColumns.filter(col => !columnMappings[col])
     
