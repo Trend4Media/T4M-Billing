@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,9 +32,31 @@ export default function ImportsPage() {
   const [uploadResult, setUploadResult] = useState<ImportResult | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState(getCurrentPeriodId())
+  const [hasManagers, setHasManagers] = useState<boolean | null>(null)
+  const [managers, setManagers] = useState<Array<{name: string, role: string}>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const currentPeriod = getCurrentPeriodId()
+
+  // Check if managers exist on component mount
+  React.useEffect(() => {
+    const checkManagers = async () => {
+      try {
+        const response = await fetch('/api/imports/check-managers')
+        if (response.ok) {
+          const data = await response.json()
+          setHasManagers(data.hasManagers)
+          setManagers(data.managers || [])
+        } else {
+          setHasManagers(false)
+        }
+      } catch (error) {
+        console.error('Error checking managers:', error)
+        setHasManagers(false)
+      }
+    }
+    checkManagers()
+  }, [])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -60,6 +82,16 @@ export default function ImportsPage() {
         body: formData
       })
 
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Upload failed:', response.status, errorText)
+        setUploadResult({
+          success: false,
+          error: `Upload fehlgeschlagen (${response.status}): ${errorText}`
+        })
+        return
+      }
+
       const result: ImportResult = await response.json()
       setUploadResult(result)
 
@@ -71,9 +103,10 @@ export default function ImportsPage() {
       }
 
     } catch (error) {
+      console.error('Upload error:', error)
       setUploadResult({
         success: false,
-        error: 'Fehler beim Upload der Datei'
+        error: `Fehler beim Upload der Datei: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`
       })
     } finally {
       setIsUploading(false)
@@ -153,6 +186,53 @@ export default function ImportsPage() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           
+          {/* Manager Check Warning */}
+          {hasManagers === false && (
+            <Card className="border-red-200 mb-6">
+              <CardHeader>
+                <CardTitle className="text-red-800">Keine Manager gefunden</CardTitle>
+                <CardDescription>
+                  Es wurden keine Manager mit den Rollen TEAM_LEADER oder SALES_REP in der Datenbank gefunden. 
+                  Bitte erstellen Sie zuerst Manager, bevor Sie Daten importieren.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/imports/create-default-manager', {
+                        method: 'POST'
+                      })
+                      if (response.ok) {
+                        // Refresh the page to check for managers again
+                        window.location.reload()
+                      } else {
+                        const error = await response.text()
+                        alert(`Fehler beim Erstellen des Managers: ${error}`)
+                      }
+                    } catch (error) {
+                      alert(`Fehler: ${error}`)
+                    }
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Standard Live Manager erstellen
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {hasManagers === true && managers.length > 0 && (
+            <Card className="border-green-200 mb-6">
+              <CardHeader>
+                <CardTitle className="text-green-800">Manager verfügbar</CardTitle>
+                <CardDescription>
+                  {managers.length} Manager gefunden: {managers.map(m => m.name).join(', ')}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
+          
           {/* Upload Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <Card>
@@ -192,10 +272,10 @@ export default function ImportsPage() {
 
                 <Button
                   onClick={handleUpload}
-                  disabled={!selectedFile || isUploading}
+                  disabled={!selectedFile || isUploading || hasManagers === false}
                   className="w-full"
                 >
-                  {isUploading ? 'Importiere...' : 'Import starten'}
+                  {isUploading ? 'Importiere...' : hasManagers === false ? 'Keine Manager verfügbar' : 'Import starten'}
                 </Button>
               </CardContent>
             </Card>

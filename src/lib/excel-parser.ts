@@ -47,6 +47,9 @@ function findColumnMapping(headers: string[]): Record<string, string> {
   const mappings: Record<string, string> = {}
   const normalizedHeaders = headers.map(h => normalizeColumnName(h))
   
+  console.log('Excel headers:', headers)
+  console.log('Normalized headers:', normalizedHeaders)
+  
   for (const [key, possibleNames] of Object.entries(COLUMN_MAPPINGS)) {
     let found = false
     
@@ -58,6 +61,7 @@ function findColumnMapping(headers: string[]): Record<string, string> {
       if (exactIndex !== -1) {
         mappings[key] = headers[exactIndex]
         found = true
+        console.log(`Found exact match for ${key}: "${headers[exactIndex]}"`)
         break
       }
       
@@ -68,6 +72,7 @@ function findColumnMapping(headers: string[]): Record<string, string> {
       if (fuzzyIndex !== -1) {
         mappings[key] = headers[fuzzyIndex]
         found = true
+        console.log(`Found fuzzy match for ${key}: "${headers[fuzzyIndex]}"`)
         break
       }
     }
@@ -82,10 +87,14 @@ function findColumnMapping(headers: string[]): Record<string, string> {
       
       if (matchingHeader) {
         mappings[key] = matchingHeader
+        console.log(`Found partial match for ${key}: "${matchingHeader}"`)
+      } else {
+        console.log(`No match found for ${key}. Key terms: ${keyTerms.join(', ')}`)
       }
     }
   }
   
+  console.log('Final mappings:', mappings)
   return mappings
 }
 
@@ -157,6 +166,8 @@ export function parseExcelFile(buffer: Buffer): ParseResult {
     
     if (missingColumns.length > 0) {
       result.errors.push(`Fehlende erforderliche Spalten: ${missingColumns.join(', ')}`)
+      result.errors.push(`Verfügbare Spalten: ${headers.join(', ')}`)
+      result.errors.push(`Gefundene Zuordnungen: ${JSON.stringify(columnMappings, null, 2)}`)
       return result
     }
 

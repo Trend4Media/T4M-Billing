@@ -174,6 +174,8 @@ async function processImportRows(
     }
   })
 
+  console.log(`Found ${managers.length} managers for import:`, managers.map(m => ({ name: m.name, role: m.role })))
+
   // Create a map for fuzzy manager matching
   const managerMap = new Map<string, string>()
   managers.forEach(manager => {
@@ -188,6 +190,11 @@ async function processImportRows(
       }
     })
   })
+
+  if (managers.length === 0) {
+    result.errors.push('Keine Manager in der Datenbank gefunden. Bitte stellen Sie sicher, dass Manager mit den Rollen TEAM_LEADER oder SALES_REP existieren.')
+    return result
+  }
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
@@ -207,7 +214,9 @@ async function processImportRows(
       }
 
       if (!managerId) {
-        result.warnings.push(`Zeile ${rowNumber}: Manager "${row.managerName}" nicht gefunden - übersprungen`)
+        const availableManagers = Array.from(managerMap.keys()).join(', ')
+        result.warnings.push(`Zeile ${rowNumber}: Manager "${row.managerName}" nicht gefunden. Verfügbare Manager: ${availableManagers} - übersprungen`)
+        console.log(`Manager lookup failed for "${row.managerName}". Available managers:`, Array.from(managerMap.keys()))
         continue
       }
 
